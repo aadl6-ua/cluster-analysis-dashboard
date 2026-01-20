@@ -37,9 +37,11 @@ wheels/
 .DS_Store
 Thumbs.db
 
-# Data (except example)
+# Data (except example datasets)
 data/*
 !data/Absenteeism_at_work.csv
+!data/iris_no_species.csv
+!data/cars.csv
 !data/.gitkeep
 
 # Logs
