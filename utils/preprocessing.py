@@ -6,20 +6,55 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
+import csv
 
 
 def load_data(file):
-    """Load CSV file and perform initial cleaning"""
+    """Load CSV file with automatic separator and header detection"""
     try:
-        # Try different separators
-        df = pd.read_csv(file, sep=';')
-        if len(df.columns) == 1:
-            file.seek(0)
-            df = pd.read_csv(file, sep=',')
+        # Read first few lines to detect format
+        file.seek(0)
+        sample = file.read(8192).decode('utf-8', errors='ignore')
+        file.seek(0)
+        
+        # Detect separator using csv.Sniffer
+        try:
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(sample)
+            separator = dialect.delimiter
+        except:
+            # Fallback: try common separators
+            separators = [',', ';', '\t', '|']
+            separator = ','
+            for sep in separators:
+                if sep in sample:
+                    separator = sep
+                    break
+        
+        # Detect if first row is header
+        file.seek(0)
+        try:
+            has_header = sniffer.has_header(sample)
+        except:
+            # Fallback: check if first row contains non-numeric values
+            first_line = sample.split('\n')[0]
+            first_values = first_line.split(separator)
+            has_header = any(not val.replace('.', '').replace('-', '').replace(',', '').isdigit() 
+                           for val in first_values if val.strip())
+        
+        # Read CSV with detected parameters
+        file.seek(0)
+        if has_header:
+            df = pd.read_csv(file, sep=separator)
+        else:
+            df = pd.read_csv(file, sep=separator, header=None)
+            # Generate column names
+            df.columns = [f'Feature_{i+1}' for i in range(len(df.columns))]
         
         # Remove ID column if exists
-        if 'ID' in df.columns:
-            df = df.drop('ID', axis=1)
+        id_columns = [col for col in df.columns if col.upper() in ['ID', 'INDEX']]
+        if id_columns:
+            df = df.drop(id_columns, axis=1)
         
         return df, None
     except Exception as e:

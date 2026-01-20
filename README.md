@@ -227,12 +227,6 @@ Your app will be live at: `https://[your-username]-cluster-analysis-dashboard.st
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -251,19 +245,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🎓 Academic Context
 
 This project was developed as part of the **Cluster Analysis** course at the **University of Silesia** (Poland) during an Erasmus+ exchange program (October 2024 - February 2025) as part of the Computer Engineering degree at Universidad de Alicante, Spain.
-
----
-
-## 📸 Screenshots
-
-### Main Dashboard
-![Dashboard Overview](docs/screenshots/dashboard.png)
-
-### K-means with Optimization
-![K-means Analysis](docs/screenshots/kmeans.png)
-
-### Algorithm Comparison
-![Comparison View](docs/screenshots/comparison.png)
 
 ---
 

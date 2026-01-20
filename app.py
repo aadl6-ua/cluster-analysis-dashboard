@@ -7,6 +7,8 @@ University of Silesia - Cluster Analysis Course
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
+from pathlib import Path
 from utils.preprocessing import load_data, preprocess_data, get_feature_summary
 from utils.clustering import (
     kmeans_clustering, dbscan_clustering, hierarchical_clustering,
@@ -16,6 +18,12 @@ from utils.visualization import (
     plot_clusters_2d, plot_clusters_3d, plot_elbow_silhouette,
     plot_dendrogram, plot_metrics_comparison, plot_cluster_sizes
 )
+
+# Get the directory where the script is located
+SCRIPT_DIR = Path(__file__).parent.absolute()
+DATA_DIR = SCRIPT_DIR / 'data'
+IRIS_DATA_PATH = DATA_DIR / 'iris_no_species.csv'
+ABSENTEEISM_DATA_PATH = DATA_DIR / 'Absenteeism_at_work.csv'
 
 # Page configuration
 st.set_page_config(
@@ -32,15 +40,43 @@ st.markdown("""
         padding: 0rem 1rem;
     }
     .stMetric {
-        background-color: #f0f2f6;
-        padding: 10px;
-        border-radius: 5px;
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stMetric label {
+        color: #555555 !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+    }
+    .stMetric [data-testid="stMetricValue"] {
+        color: #1f77b4 !important;
+        font-size: 28px !important;
+        font-weight: bold !important;
     }
     h1 {
         color: #1f77b4;
+        font-weight: 700;
+    }
+    h2 {
+        font-weight: 600;
+        margin-top: 1.5rem;
+    }
+    h3 {
+        font-weight: 600;
     }
     .st-emotion-cache-16idsys p {
         font-size: 14px;
+    }
+    div[data-testid="stExpander"] {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+    div[data-testid="stExpander"] summary {
+        font-weight: 600;
+        font-size: 16px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -60,40 +96,57 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.image("https://raw.githubusercontent.com/streamlit/streamlit/develop/docs/_static/favicon.png", width=80)
+        st.markdown("## 🔬 Cluster Analysis")
         st.title("⚙️ Configuration")
         
         # Data upload
         st.subheader("📁 Data Upload")
-        uploaded_file = st.file_uploader(
-            "Upload your CSV file",
-            type=['csv'],
-            help="Upload a CSV file with your dataset"
+        
+        data_source = st.radio(
+            "Select data source:",
+            ["Upload your own CSV", "Iris Dataset (150 samples, 4 features)", "Absenteeism at Work (740 samples, 20 features)"],
+            index=1,  # Iris por defecto
+            help="Choose to upload your own data or use an example dataset"
         )
         
-        # Example data option
-        use_example = st.checkbox("Use example dataset (Absenteeism at Work)", value=True)
+        uploaded_file = None
+        if data_source == "Upload your own CSV":
+            uploaded_file = st.file_uploader(
+                "Upload your CSV file",
+                type=['csv'],
+                help="Upload a CSV file with your dataset"
+            )
         
         # Load data
-        if uploaded_file is not None:
+        if data_source == "Upload your own CSV" and uploaded_file is not None:
             data, error = load_data(uploaded_file)
             if error:
                 st.error(f"Error loading file: {error}")
                 return
             st.session_state.data_loaded = True
             st.success("✅ Data loaded successfully!")
-        elif use_example:
+        elif data_source == "Iris Dataset (150 samples, 4 features)":
             try:
-                data = pd.read_csv('data/Absenteeism_at_work.csv', sep=';')
+                data = pd.read_csv(IRIS_DATA_PATH, sep=';')
+                st.session_state.data_loaded = True
+                st.info("🌸 Using Iris dataset - Perfect for clustering validation!")
+            except Exception as e:
+                st.error(f"Error loading Iris data: {e}")
+                st.error(f"Looking for file at: {IRIS_DATA_PATH}")
+                return
+        elif data_source == "Absenteeism at Work (740 samples, 20 features)":
+            try:
+                data = pd.read_csv(ABSENTEEISM_DATA_PATH, sep=';')
                 if 'ID' in data.columns:
                     data = data.drop('ID', axis=1)
                 st.session_state.data_loaded = True
-                st.info("📊 Using example dataset")
+                st.info("📊 Using Absenteeism at Work dataset")
             except Exception as e:
-                st.error(f"Error loading example data: {e}")
+                st.error(f"Error loading Absenteeism data: {e}")
+                st.error(f"Looking for file at: {ABSENTEEISM_DATA_PATH}")
                 return
         else:
-            st.warning("⚠️ Please upload a CSV file or use the example dataset")
+            st.warning("⚠️ Please upload a CSV file or select an example dataset")
             return
         
         st.markdown("---")
@@ -178,9 +231,9 @@ def main():
         with col2:
             st.subheader("Data Types")
             dtypes_df = pd.DataFrame({
-                'Column': data.columns,
-                'Type': data.dtypes.values,
-                'Non-Null Count': data.count().values
+                'Column': [str(col) for col in data.columns],
+                'Type': [str(dtype) for dtype in data.dtypes.values],
+                'Non-Null Count': [int(count) for count in data.count().values]
             })
             st.dataframe(dtypes_df, use_container_width=True)
     
